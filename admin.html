@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · still, the light</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0b0407;
+      color: #f4e9e2;
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    .admin-container {
+      max-width: 900px;
+      width: 100%;
+      background: rgba(30, 12, 18, 0.65);
+      border: 1px solid rgba(200, 140, 140, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.8);
+    }
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #f4e9e2;
+    }
+    .subtitle {
+      color: #b18b8b;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-card {
+      background: rgba(20, 8, 12, 0.7);
+      border: 1px solid rgba(200, 140, 140, 0.15);
+      border-radius: 12px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .stat-card .number {
+      font-size: 2.2rem;
+      font-weight: 400;
+      color: #e6cfc7;
+      line-height: 1.2;
+    }
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: #b18b8b;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.4rem;
+    }
+    .events-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .events-table th {
+      text-align: left;
+      padding: 0.8rem 0.5rem;
+      border-bottom: 1px solid rgba(200, 140, 140, 0.2);
+      color: #b18b8b;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.7rem;
+    }
+    .events-table td {
+      padding: 0.7rem 0.5rem;
+      border-bottom: 1px solid rgba(200, 140, 140, 0.08);
+      color: #d9c6c0;
+    }
+    .events-table tr:hover td {
+      background: rgba(200, 140, 140, 0.05);
+    }
+    .no-events {
+      color: #8f6666;
+      font-style: italic;
+      padding: 1rem 0;
+    }
+    .logout-btn {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.7rem 1.8rem;
+      background: rgba(180, 100, 100, 0.15);
+      border: 1px solid rgba(200, 140, 140, 0.3);
+      border-radius: 40px;
+      color: #e6cfc7;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .logout-btn:hover {
+      background: rgba(180, 100, 100, 0.3);
+      border-color: rgba(200, 140, 140, 0.5);
+    }
+    @media (max-width: 600px) {
+      .admin-container { padding: 1.2rem; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+      .stat-card .number { font-size: 1.6rem; }
+      .events-table th, .events-table td { font-size: 0.8rem; padding: 0.5rem 0.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <h1>Analytics Dashboard</h1>
+    <div class="subtitle">still, the light · protected view</div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="number" id="totalPageViews">–</div>
+        <div class="label">Page Views</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="totalAudioPlays">–</div>
+        <div class="label">Audio Plays</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="uniqueVisitors">–</div>
+        <div class="label">Unique Visitors</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="lastEventTime">–</div>
+        <div class="label">Last Event</div>
+      </div>
+    </div>
+
+    <h2 style="font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.4rem; margin-bottom: 1rem; color: #e6cfc7;">Recent Events</h2>
+    <div id="eventsContainer">
+      <p class="no-events">Loading…</p>
+    </div>
+
+    <a href="/logout" class="logout-btn">Log out</a>
+  </div>
+
+  <script>
+    (async function loadDashboard() {
+      try {
+        const res = await fetch('/api/analytics/summary');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+
+        document.getElementById('totalPageViews').textContent = data.totalPageViews ?? 0;
+        document.getElementById('totalAudioPlays').textContent = data.totalAudioPlays ?? 0;
+        document.getElementById('uniqueVisitors').textContent = data.uniqueVisitors ?? 0;
+        document.getElementById('lastEventTime').textContent = data.lastEventTime
+          ? new Date(data.lastEventTime).toLocaleTimeString()
+          : '–';
+
+        const container = document.getElementById('eventsContainer');
+        if (data.recentEvents && data.recentEvents.length > 0) {
+          let html = `<table class="events-table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Path</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>`;
+          for (const ev of data.recentEvents) {
+            html += `<tr>
+              <td>${ev.event || '–'}</td>
+              <td>${ev.path || '–'}</td>
+              <td>${ev.timestamp ? new Date(ev.timestamp).toLocaleString() : '–'}</td>
+            </tr>`;
+          }
+          html += `</tbody></table>`;
+          container.innerHTML = html;
+        } else {
+          container.innerHTML = '<p class="no-events">No events recorded yet.</p>';
+        }
+      } catch (err) {
+        document.getElementById('eventsContainer').innerHTML =
+          '<p class="no-events">Unable to load analytics. Please try again later.</p>';
+      }
+    })();
+  </script>
+</body>
+</html>
